@@ -1,0 +1,20 @@
+services:
+  AvitoTest_db:
+    image: postgres:15
+    container_name: AvitoTest_db
+    env_file:
+      - environment/.env
+    ports:
+      - "25345:5432"
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d
+      - AvitoTest_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  AvitoTest_pgdata:
