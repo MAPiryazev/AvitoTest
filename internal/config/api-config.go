@@ -12,7 +12,13 @@ type APIConfig struct {
 }
 
 // LoadAPIConfig — загружает конфиг API
-func LoadAPIConfig() (*APIConfig, error) {
+func LoadAPIConfig(envPath string) (*APIConfig, error) {
+	if envPath != "" {
+		if err := loadEnvFile(envPath); err != nil {
+			return nil, fmt.Errorf("ошибка загрузки .env файла: %w", err)
+		}
+	}
+
 	port := os.Getenv("API_PORT")
 	if port == "" {
 		return nil, fmt.Errorf("ошибка конфигурации API: %w", customerrors.ErrParamNotFound)

@@ -10,6 +10,7 @@ import (
 	"AvitoTest/internal/models"
 )
 
+// pgUserRepository реализует репозиторий для работы с пользователями
 type pgUserRepository struct {
 	db *sql.DB
 }
@@ -102,7 +103,7 @@ func (r *pgUserRepository) GetUsersByTeamID(ctx context.Context, teamID int) ([]
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
-	defer rows.Close()
+	defer safeClose(rows) // безопасное закрытие rows
 
 	users := make([]models.User, 0)
 	for rows.Next() {

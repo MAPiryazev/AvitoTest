@@ -133,7 +133,14 @@ func (s *prService) ReassignReviewer(ctx context.Context, prID string, oldReview
 		return nil, fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
 
-	exclude := append(pr.ReviewerIDs, pr.AuthorID)
+	// Исключаем автора и других ревьюверов (но не самого заменяемого ревьювера)
+	exclude := []int{pr.AuthorID}
+	for _, reviewerID := range pr.ReviewerIDs {
+		if reviewerID != oldReviewerID {
+			exclude = append(exclude, reviewerID)
+		}
+	}
+
 	candidates := []int{}
 	for _, u := range team.Members {
 		if u.IsActive && !contains(exclude, u.ID) {

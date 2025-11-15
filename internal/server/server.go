@@ -23,20 +23,17 @@ type Server struct {
 }
 
 // NewServer создает и инициализирует сервер со всеми зависимостями
-func NewServer() (*Server, error) {
-	// Загружаем конфигурацию БД
-	dbCfg, err := config.LoadDBConfig()
+func NewServer(envPath string) (*Server, error) {
+	dbCfg, err := config.LoadDBConfig(envPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load DB config: %w", err)
+		return nil, fmt.Errorf("не удалось загрузить конфиг БД: %w", err)
 	}
 
-	// Инициализируем подключение к БД
 	db, err := config.InitDB(dbCfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to init DB: %w", err)
+		return nil, fmt.Errorf("ошибка инициализации БД: %w", err)
 	}
 
-	// Создаем репозитории
 	userRepo := postgres.NewUserRepositoryPG(db)
 	teamRepo := postgres.NewTeamRepositoryPG(db)
 	prRepo := postgres.NewPullRequestRepositoryPG(db)
@@ -47,23 +44,18 @@ func NewServer() (*Server, error) {
 		PRRepo:   prRepo,
 	}
 
-	// Создаем сервисы
 	svc := service.NewService(repo)
 
-	// Создаем хендлеры
 	h := handler.NewHandler(svc)
 
-	// Загружаем конфигурацию API
-	apiCfg, err := config.LoadAPIConfig()
+	apiCfg, err := config.LoadAPIConfig(envPath)
 	if err != nil {
 		_ = db.Close()
-		return nil, fmt.Errorf("failed to load API config: %w", err)
+		return nil, fmt.Errorf("ошибка загрузки api конфига: %w", err)
 	}
 
-	// Создаем HTTP роутер
 	router := api.Handler(h)
 
-	// Создаем HTTP сервер
 	httpServer := &http.Server{
 		Addr:         ":" + apiCfg.Port,
 		Handler:      router,
@@ -78,29 +70,25 @@ func NewServer() (*Server, error) {
 	}, nil
 }
 
-// Start запускает HTTP сервер
 func (s *Server) Start() error {
-	log.Printf("Starting server on %s", s.httpServer.Addr)
+	log.Printf("запуск сервера на  %s", s.httpServer.Addr)
 	if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("failed to start server: %w", err)
+		return fmt.Errorf("ошибка запуска сервера: %w", err)
 	}
 	return nil
 }
 
-// Shutdown корректно останавливает сервер
 func (s *Server) Shutdown(ctx context.Context) error {
-	log.Println("Shutting down server...")
+	log.Println("остановка сервера...")
 
-	// Закрываем HTTP сервер
 	if err := s.httpServer.Shutdown(ctx); err != nil {
-		return fmt.Errorf("failed to shutdown HTTP server: %w", err)
+		return fmt.Errorf("не удалось остановить сервер: %w", err)
 	}
 
-	// Закрываем подключение к БД
 	if err := s.db.Close(); err != nil {
-		return fmt.Errorf("failed to close DB connection: %w", err)
+		return fmt.Errorf("не удалось закрыть подключение к БД: %w", err)
 	}
 
-	log.Println("Server shutdown complete")
+	log.Println("Остановка сервиса успешна")
 	return nil
 }

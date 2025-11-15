@@ -9,6 +9,8 @@ import (
 
 	customerrors "AvitoTest/internal/custom-errors"
 
+	"github.com/joho/godotenv"
+
 	_ "github.com/lib/pq"
 )
 
@@ -25,7 +27,13 @@ type DBPSQLConfig struct {
 }
 
 // LoadDBConfig — загружает конфиг БД
-func LoadDBConfig() (*DBPSQLConfig, error) {
+func LoadDBConfig(envPath string) (*DBPSQLConfig, error) {
+	if envPath != "" {
+		if err := loadEnvFile(envPath); err != nil {
+			return nil, fmt.Errorf("ошибка загрузки .env файла: %w", err)
+		}
+	}
+
 	host := os.Getenv("POSTGRES_HOST")
 	port := os.Getenv("POSTGRES_PORT")
 	user := os.Getenv("POSTGRES_USER")
@@ -88,4 +96,12 @@ func InitDB(cfg *DBPSQLConfig) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+// loadEnvFile загружает переменные окружения из .env файла
+func loadEnvFile(path string) error {
+	if err := godotenv.Load(path); err != nil {
+		return nil
+	}
+	return nil
 }

@@ -26,15 +26,6 @@ func NewTeamService(teamRepo repository.TeamRepository, userRepo repository.User
 
 // CreateTeam создаёт команду с участниками (создаёт или обновляет пользователей)
 func (s *teamService) CreateTeam(ctx context.Context, team models.Team) error {
-	for _, u := range team.Members {
-		if err := s.userRepo.CreateOrUpdateUser(ctx, u); err != nil {
-			if errors.Is(err, customerrors.ErrDBQuery) {
-				return fmt.Errorf("%w: при создании/обновлении пользователя %s", customerrors.ErrDBQuery, u.Username)
-			}
-			return fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
-		}
-	}
-
 	if err := s.teamRepo.CreateTeam(ctx, team); err != nil {
 		if errors.Is(err, customerrors.ErrAlreadyExists) {
 			return fmt.Errorf("%w: команда с именем %s уже существует", customerrors.ErrAlreadyExists, team.Name)

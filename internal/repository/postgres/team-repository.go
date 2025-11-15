@@ -11,6 +11,7 @@ import (
 	"AvitoTest/internal/models"
 )
 
+// pgTeamRepository реализует репозиторий для работы с командами
 type pgTeamRepository struct {
 	db *sql.DB
 }
@@ -25,7 +26,11 @@ func (r *pgTeamRepository) CreateTeam(ctx context.Context, team models.Team) err
 	if err != nil {
 		return fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil && rollbackErr != sql.ErrTxDone {
+			fmt.Printf("tx rollback error: %v\n", rollbackErr)
+		}
+	}()
 
 	var teamID int
 	err = tx.QueryRowContext(ctx,
@@ -33,7 +38,6 @@ func (r *pgTeamRepository) CreateTeam(ctx context.Context, team models.Team) err
 		team.Name,
 	).Scan(&teamID)
 	if err != nil {
-		// проверка на уникальность
 		if pgErr, ok := err.(*pq.Error); ok && pgErr.Code.Name() == "unique_violation" {
 			return customerrors.ErrAlreadyExists
 		}
@@ -75,12 +79,11 @@ func (r *pgTeamRepository) GetTeamByName(ctx context.Context, name string) (*mod
 		return nil, fmt.Errorf("%w: %v", customerrors.ErrDBScan, err)
 	}
 
-	// Получаем участников команды
 	rows, err := r.db.QueryContext(ctx, `SELECT id, user_id, username, team_id, is_active FROM users WHERE team_id=$1`, team.ID)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
-	defer rows.Close()
+	defer safeClose(rows)
 
 	for rows.Next() {
 		var u models.User
@@ -111,12 +114,11 @@ func (r *pgTeamRepository) GetTeamOfUser(ctx context.Context, userID int) (*mode
 		return nil, fmt.Errorf("%w: %v", customerrors.ErrDBScan, err)
 	}
 
-	// Получаем участников команды
 	rows, err := r.db.QueryContext(ctx, `SELECT id, user_id, username, team_id, is_active FROM users WHERE team_id=$1`, team.ID)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
-	defer rows.Close()
+	defer safeClose(rows)
 
 	for rows.Next() {
 		var u models.User

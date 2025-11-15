@@ -22,15 +22,26 @@ func NewPullRequestRepositoryPG(db *sql.DB) *pgPullRequestRepository {
 	return &pgPullRequestRepository{db: db}
 }
 
+func safeRollback(tx *sql.Tx) {
+	if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
+		fmt.Printf("rollback error: %v\n", err)
+	}
+}
+
+func safeClose(rows *sql.Rows) {
+	if err := rows.Close(); err != nil {
+		fmt.Printf("rows close error: %v\n", err)
+	}
+}
+
 // CreatePullRequest создает PR и автоматически назначает до 2 ревьюверов из команды автора
 func (r *pgPullRequestRepository) CreatePullRequest(ctx context.Context, pr models.PullRequest) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
-	defer tx.Rollback()
+	defer safeRollback(tx)
 
-	// 1. Вставляем PR
 	err = tx.QueryRowContext(ctx,
 		`INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id)
 		VALUES ($1, $2, $3) RETURNING id, created_at`,
@@ -42,7 +53,6 @@ func (r *pgPullRequestRepository) CreatePullRequest(ctx context.Context, pr mode
 		return fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
 
-	// 2. Получаем команду автора
 	rows, err := tx.QueryContext(ctx,
 		`SELECT u.id, u.user_id, u.username, u.team_id, u.is_active
 		 FROM users u
@@ -52,7 +62,7 @@ func (r *pgPullRequestRepository) CreatePullRequest(ctx context.Context, pr mode
 	if err != nil {
 		return fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
-	defer rows.Close()
+	defer safeClose(rows)
 
 	activeMembers := make([]int, 0)
 	for rows.Next() {
@@ -66,13 +76,12 @@ func (r *pgPullRequestRepository) CreatePullRequest(ctx context.Context, pr mode
 		return fmt.Errorf("%w: %v", customerrors.ErrDBScan, err)
 	}
 
-	// 3. Выбираем случайно до 2 ревьюверов
-	rand.Seed(time.Now().UnixNano())
-	n := len(activeMembers)
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	reviewers := make([]int, 0)
+	n := len(activeMembers)
 	if n >= 2 {
 		for i := 0; i < 2; i++ {
-			idx := rand.Intn(len(activeMembers))
+			idx := rng.Intn(len(activeMembers))
 			reviewers = append(reviewers, activeMembers[idx])
 			activeMembers = append(activeMembers[:idx], activeMembers[idx+1:]...)
 		}
@@ -80,7 +89,6 @@ func (r *pgPullRequestRepository) CreatePullRequest(ctx context.Context, pr mode
 		reviewers = append(reviewers, activeMembers[0])
 	}
 
-	// 4. Вставляем в pull_request_reviewers
 	for _, rid := range reviewers {
 		_, err := tx.ExecContext(ctx,
 			`INSERT INTO pull_request_reviewers (pull_request_id, reviewer_id) VALUES ($1, $2)`,
@@ -107,7 +115,7 @@ func (r *pgPullRequestRepository) GetPullRequestByPublicID(ctx context.Context, 
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
-	defer rows.Close()
+	defer safeClose(rows)
 
 	if !rows.Next() {
 		return nil, fmt.Errorf("%w: pull_request_id=%s", customerrors.ErrNotFound, prID)
@@ -117,7 +125,6 @@ func (r *pgPullRequestRepository) GetPullRequestByPublicID(ctx context.Context, 
 		return nil, fmt.Errorf("%w: %v", customerrors.ErrDBScan, err)
 	}
 
-	// Получаем ревьюверов с их user_id
 	reviewerRows, err := r.db.QueryContext(ctx,
 		`SELECT u.id, u.user_id FROM pull_request_reviewers prr 
 		 JOIN users u ON prr.reviewer_id = u.id 
@@ -125,7 +132,7 @@ func (r *pgPullRequestRepository) GetPullRequestByPublicID(ctx context.Context, 
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
-	defer reviewerRows.Close()
+	defer safeClose(reviewerRows)
 
 	pr.ReviewerIDs = make([]int, 0)
 	for reviewerRows.Next() {
@@ -140,13 +147,13 @@ func (r *pgPullRequestRepository) GetPullRequestByPublicID(ctx context.Context, 
 	return &pr, nil
 }
 
-// SetPullRequestMerged помечает PR как MERGED, идемпотентно
+// SetPullRequestMerged помечает PR как MERGED идемпотентно
 func (r *pgPullRequestRepository) SetPullRequestMerged(ctx context.Context, prID string) (*models.PullRequest, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
-	defer tx.Rollback()
+	defer safeRollback(tx)
 
 	pr, err := r.GetPullRequestByPublicID(ctx, prID)
 	if err != nil {
@@ -194,7 +201,7 @@ func (r *pgPullRequestRepository) UpdateReviewers(ctx context.Context, prID int,
 	if err != nil {
 		return fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
-	defer tx.Rollback()
+	defer safeRollback(tx)
 
 	_, err = tx.ExecContext(ctx, `DELETE FROM pull_request_reviewers WHERE pull_request_id=$1`, prID)
 	if err != nil {
@@ -225,7 +232,7 @@ func (r *pgPullRequestRepository) GetPRsWhereUserReviewer(ctx context.Context, u
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
-	defer rows.Close()
+	defer safeClose(rows)
 
 	result := make([]models.PullRequestShort, 0)
 	for rows.Next() {
@@ -264,7 +271,7 @@ func (r *pgPullRequestRepository) GetActiveTeamMembersExcept(ctx context.Context
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", customerrors.ErrDBQuery, err)
 	}
-	defer rows.Close()
+	defer safeClose(rows)
 
 	users := make([]models.User, 0)
 	for rows.Next() {
