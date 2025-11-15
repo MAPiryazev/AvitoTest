@@ -5,4 +5,3 @@ lint:
 # Тесты
 test:
 	go test -v ./...
-
