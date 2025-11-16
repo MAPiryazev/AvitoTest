@@ -22,26 +22,25 @@ docker-compose up -d
 
 ### Команды
 
-POST /team/add - создать команду с участниками
-GET /team/get?team_name=название - получить команду
+POST /team/add - создать команду с участниками  
+GET /team/get?team_name=название - получить команду  
 
 ### Пользователи
 
-POST /users/setIsActive - установить активность пользователя
-GET /users/getReview?user_id=id - получить PR где пользователь ревьювер
+POST /users/setIsActive - установить активность пользователя  
+GET /users/getReview?user_id=id - получить PR где пользователь ревьювер  
 
 ### Pull Request
 
-POST /pullRequest/create - создать PR и назначить ревьюверов
-POST /pullRequest/merge - пометить PR как выполненный
-POST /pullRequest/reassign - переназначить ревьювера
+POST /pullRequest/create - создать PR и назначить ревьюверов  
+POST /pullRequest/merge - пометить PR как выполненный  
+POST /pullRequest/reassign - переназначить ревьювера  
 
 ## Примеры
 
 Создать команду:
-
+**POST /team/add**
 ```json
-POST /team/add
 {
   "team_name": "backend",
   "members": [
@@ -60,9 +59,8 @@ POST /team/add
 ```
 
 Установить активность пользователя:
-
+**POST /users/setIsActive**
 ```json
-POST /users/setIsActive
 {
   "user_id": "u1",
   "is_active": false
@@ -70,9 +68,8 @@ POST /users/setIsActive
 ```
 
 Создать PR:
-
+**POST /pullRequest/create**
 ```json
-POST /pullRequest/create
 {
   "pull_request_id": "pr-1",
   "pull_request_name": "Fix bug",
@@ -81,9 +78,8 @@ POST /pullRequest/create
 ```
 
 Переназначить ревьювера:
-
+**POST /pullRequest/reassign**
 ```json
-POST /pullRequest/reassign
 {
   "pull_request_id": "pr-1",
   "old_user_id": "u2"
@@ -91,7 +87,6 @@ POST /pullRequest/reassign
 ```
 
 ## Дополнительные задания
-
 Нагрузочные тесты находятся в tests/load/. запуск: `make test`
 Конфигурация линтера описана в `.golangci.yml`
 
