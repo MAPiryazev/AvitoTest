@@ -13,7 +13,7 @@ func writeAPIError(w http.ResponseWriter, err error) {
 
 	var resp api.ErrorResponse
 
-	// маппинг ошибок домена в OpenAPI-коды
+	// маппинг ошибок в коды
 	switch {
 	case errors.Is(err, customerrors.ErrNotFound):
 		w.WriteHeader(http.StatusNotFound)

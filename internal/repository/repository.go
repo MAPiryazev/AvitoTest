@@ -25,8 +25,6 @@ type PullRequestRepository interface {
 	SetPullRequestMerged(ctx context.Context, prID string) (*models.PullRequest, error)
 	UpdateReviewers(ctx context.Context, prID int, newReviewerIDs []int) error
 	GetPRsWhereUserReviewer(ctx context.Context, userID int) ([]models.PullRequestShort, error)
-
-	// Для случайного выбора активных участников команды с исключениями
 	GetActiveTeamMembersExcept(ctx context.Context, teamID int, exclude []int) ([]models.User, error)
 }
 

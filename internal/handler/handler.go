@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// Handler — интерфейс HTTP слоя.
+// Handler интерфейс HTTP слоя.
 type Handler interface {
 	PostPullRequestCreate(w http.ResponseWriter, r *http.Request)
 	PostPullRequestMerge(w http.ResponseWriter, r *http.Request)
@@ -19,7 +19,7 @@ type Handler interface {
 	PostUsersSetIsActive(w http.ResponseWriter, r *http.Request)
 }
 
-// handler — реализация интерфейса Handler.
+// handler реализация интерфейса Handler.
 type handler struct {
 	services *service.Service
 }

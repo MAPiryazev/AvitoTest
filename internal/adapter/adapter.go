@@ -7,7 +7,6 @@ import (
 )
 
 // UserModelToAPI конвертирует обычного User.
-// Здесь TeamName пустой, потому что обычный User его не содержит.
 func UserModelToAPI(u models.User) api.User {
 	return api.User{
 		UserId:   u.UserID,
@@ -17,7 +16,7 @@ func UserModelToAPI(u models.User) api.User {
 	}
 }
 
-// UserWithTeamModelToAPI — корректная конвертация с названием команды.
+// UserWithTeamModelToAPI конвертация с названием команды.
 func UserWithTeamModelToAPI(u models.UserWithTeam) api.User {
 	return api.User{
 		UserId:   u.UserID,
@@ -27,7 +26,7 @@ func UserWithTeamModelToAPI(u models.UserWithTeam) api.User {
 	}
 }
 
-// Пользователи → TeamMember (version 1 — только User)
+// Пользователи в TeamMember (version 1 - только User)
 func UsersModelToAPI(users []models.User) []api.TeamMember {
 	out := make([]api.TeamMember, len(users))
 	for i, u := range users {
@@ -40,7 +39,7 @@ func UsersModelToAPI(users []models.User) []api.TeamMember {
 	return out
 }
 
-// Пользователи → TeamMember (version 2 — UserWithTeam)
+// Пользователи в TeamMember (version 2 - UserWithTeam)
 func UsersWithTeamModelToAPI(users []models.UserWithTeam) []api.TeamMember {
 	out := make([]api.TeamMember, len(users))
 	for i, u := range users {
@@ -53,7 +52,6 @@ func UsersWithTeamModelToAPI(users []models.UserWithTeam) []api.TeamMember {
 	return out
 }
 
-// TeamModelToAPI — если у тебя обычная Team и участники — обычные User
 func TeamModelToAPI(team models.Team, members []models.User) api.Team {
 	return api.Team{
 		TeamName: team.Name,
@@ -61,7 +59,6 @@ func TeamModelToAPI(team models.Team, members []models.User) api.Team {
 	}
 }
 
-// TeamWithMembersToAPI — если метод возвращает []UserWithTeam
 func TeamWithMembersToAPI(teamName string, members []models.UserWithTeam) api.Team {
 	return api.Team{
 		TeamName: teamName,
@@ -82,8 +79,6 @@ func PullRequestModelToAPIWithUserIDs(pr models.PullRequest, authorUserID string
 	}
 }
 
-// PullRequestModelToAPI - устаревший метод, используйте PullRequestModelToAPIWithUserIDs
-// Оставлен для обратной совместимости, но возвращает внутренние ID вместо user_id
 func PullRequestModelToAPI(pr models.PullRequest) api.PullRequest {
 	assigned := make([]string, len(pr.ReviewerIDs))
 	for i, id := range pr.ReviewerIDs {

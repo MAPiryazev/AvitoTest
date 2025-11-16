@@ -10,13 +10,13 @@ import (
 	"AvitoTest/internal/repository"
 )
 
-// userService — реализация UserService
+// userService реализация UserService
 type userService struct {
 	userRepo repository.UserRepository
 	teamRepo repository.TeamRepository
 }
 
-// NewUserService — конструктор
+// NewUserService конструктор
 func NewUserService(userRepo repository.UserRepository, teamRepo repository.TeamRepository) UserService {
 	return &userService{
 		userRepo: userRepo,

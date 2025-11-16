@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// prService — реализация PRService
+// prService реализация PRService
 type prService struct {
 	prRepo   repository.PullRequestRepository
 	teamRepo repository.TeamRepository
@@ -22,7 +22,7 @@ type prService struct {
 	rnd      *rand.Rand
 }
 
-// NewPRService — конструктор
+// NewPRService конструктор
 func NewPRService(prRepo repository.PullRequestRepository, teamRepo repository.TeamRepository, userRepo repository.UserRepository) PRService {
 	src := rand.NewSource(time.Now().UnixNano())
 	return &prService{
@@ -87,7 +87,7 @@ func (s *prService) CreatePullRequest(ctx context.Context, pr models.PullRequest
 	return created, nil
 }
 
-// MergePullRequest — идемпотентно помечает PR как MERGED
+// MergePullRequest идемпотентно помечает PR как MERGED
 func (s *prService) MergePullRequest(ctx context.Context, prID string) (*models.PullRequest, error) {
 	pr, err := s.prRepo.SetPullRequestMerged(ctx, prID)
 	if err != nil {
@@ -99,7 +99,7 @@ func (s *prService) MergePullRequest(ctx context.Context, prID string) (*models.
 	return pr, nil
 }
 
-// ReassignReviewer — заменяет одного ревьювера на другого из его команды
+// ReassignReviewer заменяет одного ревьювера на другого из его команды
 func (s *prService) ReassignReviewer(ctx context.Context, prID string, oldReviewerID int) (*models.PullRequest, error) {
 	pr, err := s.prRepo.GetPullRequestByPublicID(ctx, prID)
 	if err != nil {
@@ -168,7 +168,7 @@ func (s *prService) ReassignReviewer(ctx context.Context, prID string, oldReview
 	return pr, nil
 }
 
-// GetPRsForReviewer — список PR где юзер ревьювер
+// GetPRsForReviewer список PR где юзер ревьювер
 func (s *prService) GetPRsForReviewer(ctx context.Context, userID int) ([]models.PullRequestShort, error) {
 	prs, err := s.prRepo.GetPRsWhereUserReviewer(ctx, userID)
 	if err != nil {

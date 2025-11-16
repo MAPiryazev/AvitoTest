@@ -26,7 +26,7 @@ type DBPSQLConfig struct {
 	MaxConnLifetime int
 }
 
-// LoadDBConfig — загружает конфиг БД
+// LoadDBConfig загружает конфиг БД
 func LoadDBConfig(envPath string) (*DBPSQLConfig, error) {
 	if envPath != "" {
 		if err := loadEnvFile(envPath); err != nil {
