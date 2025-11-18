@@ -18,7 +18,24 @@ docker-compose build
 docker-compose up -d
 ```
 
-Сервер запустится на порту **8080**. Нужно чтобы в environment/.env были указаны параметры подключения к БД.
+Сервер запустится на порту **8080**. Нужно чтобы в environment/.env были указаны параметры подключения к БД.  
+
+### Стандартные значения переменных .env
+```bash
+#POSTGRES   
+POSTGRES_HOST=AvitoTest_db  
+POSTGRES_PORT=5432  
+POSTGRES_USER=postgres  
+POSTGRES_PASSWORD=secret  
+POSTGRES_SSLMODE=disable  
+POSTGRES_DB=postgres  
+POSTGRES_MAX_OPEN_CONNS=25  
+POSTGRES_MAX_IDLE_CONNS=10  
+POSTGRES_CONN_MAX_LIFETIME=15  
+
+#API  
+API_PORT=8080  
+```
 
 ### Команды
 
